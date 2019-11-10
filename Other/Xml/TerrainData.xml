@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfTerrainDataEntry xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TerrainDataEntry>
+    <Key>MarkNstein.AutoLensSwapper</Key>
+    <Name>Auto Lens Swapper</Name>
+    <Description>Swaps lenses in all you LPTs!</Description>
+    <LayerType>PrimaryTerrain</LayerType>
+    <TopTexture>192</TopTexture>
+    <SideTexture>192</SideTexture>
+    <BottomTexture>192</BottomTexture>
+    <GUITexture>192</GUITexture>
+    <isSolid>true</isSolid>
+    <isTransparent>false</isTransparent>
+    <isHollow>false</isHollow>
+    <isGlass>false</isGlass>
+    <isPassable>false</isPassable>
+    <hasObject>true</hasObject>
+    <hasEntity>true</hasEntity>
+    <isMultiBlockMachine>false</isMultiBlockMachine>
+    <OreType>None</OreType>
+    <Category>Machine</Category>
+    <AudioWalkType>Metal</AudioWalkType>
+    <AudioBuildType>Dirt</AudioBuildType>
+    <AudioDestroyType>Dirt</AudioDestroyType>
+    <IconName>Matter Mover</IconName>
+    <tags>
+      <tag>Machinery</tag>
+    </tags>
+  </TerrainDataEntry>
+</ArrayOfTerrainDataEntry>

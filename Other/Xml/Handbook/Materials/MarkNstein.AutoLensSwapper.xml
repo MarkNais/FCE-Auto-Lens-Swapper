@@ -1,0 +1,37 @@
+<MaterialEntry>
+	<Name>Auto Lens Swapper</Name>
+	<Pages>
+		<Page>
+			<Paragraphs>
+				<Title>
+					<Text>Auto Lens Swapper</Text>
+				</Title>
+        <Icon>
+          <Name>Matter Mover</Name>
+          <Alignment>Center</Alignment>
+        </Icon>
+				<Paragraph>
+					<Text>Easily swap lenses across your whole base with this one machine!
+					</Text>
+				</Paragraph>
+				<Header><Text>Directions:</Text></Header>
+				<Paragraph>
+					<Text>- Place, and provide with power. 64 power is used per swap.
+- The must be "set" to a new-lens by inserting (T) lenses into the machine manually.
+- Once set, the machine will also pull lenses for adjacent machines if it's internal buffer empties.
+- Follow HUD-pop-up text for setting the machine.
+- Settings include: SwapOnly (do not give empty LPTs a lense) and,
+- TrashOld: (Destroy old lenses)
+- At any time, extract (Q) from the machine to reset it. retrieving any new-lenses still in the buffer.
+
+
+</Text>
+				</Paragraph>
+        <Paragraph>
+          <Text>Note: The machine only has an internal buffer for new-lenses. If not trashing: the machine will not remove a lense from an LPT if it cannot deposit the lense to an adjacent machine. The machine will wait to offload.
+          </Text>
+        </Paragraph>
+			</Paragraphs>
+		</Page>			
+	</Pages>
+</MaterialEntry>

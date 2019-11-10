@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfCraftData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <CraftData>
+		<Key>MarkNstein.AutoLensSwapper.Recipe</Key>
+		<Category>powertransmission</Category>
+		<Tier>1</Tier>
+		<CraftedKey>MarkNstein.AutoLensSwapper</CraftedKey>
+		<CraftedAmount>1</CraftedAmount>
+		<Costs>
+			<CraftCost>
+				<Key>MatterMover</Key>
+				<Amount>1</Amount>
+			</CraftCost>
+			<CraftCost>
+				<Key>AutoUpgrader</Key>
+				<Amount>1</Amount>
+			</CraftCost>
+			<CraftCost>
+        <Key>PowerStorageMK2</Key>
+        <Amount>1</Amount>
+			</CraftCost>
+		</Costs>
+		<Description>Swaps lenses in all LPTs in your base. See handbook!</Description>
+		<Hint>Rapid swappage, high Energy cost!</Hint>
+		
+		<ResearchRequirements>
+			<Research>T2 Power</Research>
+			<Research>T2 assist machines</Research>
+		</ResearchRequirements>
+
+		<ResearchCost>2</ResearchCost>
+		
+	</CraftData>
+</ArrayOfCraftData>
