@@ -5,13 +5,22 @@ using FortressCraft.Community.Utilities;
 using System.IO;
 using UnityEngine;
 
+/*To-do
+ * Test ItemStack.amount : 0
+ * Remove TargetLens and simplify PopUp
+ * Debug Shift+E triggering !Shift-E
+ * Add window
+ */
+
+
 public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemConsumerInterface
 {
     public int data;
     public GameObject HoloCubePreview;
     public bool mbLinkedToGo;
     private int mUpdates;
-
+    private const bool mDebug = false;
+    
     public eStatuses mStatus;
     public eIssues mIssue;
     public bool mbHaltedEarly;
@@ -30,8 +39,10 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
     //private List<StorageMachineInterface> maAttachedHoppers;
     public ItemBase mTargetLens;
     public ItemBase mStoredLenses;
-    public const int mnStorageMax = 1000;
+    public const int minLensID = 3004;
+    public const int maxLensID = 3014;
 
+    public const int mnStorageMax = 1000;
     public const float mrMaxPower = 1500f;
     public const float mrMaxTransferRate = float.MaxValue;
     public const float mrPowerPerSwap = 64f;
@@ -58,7 +69,6 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
     : base(parameters)
     {
         mbNeedsLowFrequencyUpdate = true;
-        this.mbNeedsLowFrequencyUpdate = true;
         mbNeedsUnityUpdate = true;
         mUpdates = 0;
 
@@ -87,6 +97,14 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         mbLinkedToGo = false;
     }
 
+    public override void OnDelete()
+    {
+        if (WorldScript.mbIsServer)
+            if (mStoredLenses != null)
+                if (mStoredLenses.GetAmount() > 0)
+                    ItemManager.instance.DropItem(mStoredLenses, mnX, mnY, mnZ, Vector3.zero);
+    }
+
     //model selection
     public override void SpawnGameObject()
     {
@@ -96,12 +114,12 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
     public override void LowFrequencyUpdate()
     {
         ++mUpdates;
-        if(mUpdates%20 == 0)
+        if(mUpdates%20 == 0 && mDebug)
         {
-            string txt = "[AutoLensCrafter][DEBUG] Yes, LFUT is running.";
+            string txt = "[Auto Lens Swapper][DEBUG] Yes, LFUT is running.";
             txt += "\nmIssue: " + mIssue.ToString();
             txt += "\nmStatus: " + mStatus.ToString();
-            Debug.Log(txt);
+            Debug.LogWarning(txt);
         }
         float seconds = LowFrequencyThread.mrPreviousUpdateTimeStep;
         UpdatePlayerDistanceInfo(); //cull inside rooms.
@@ -125,13 +143,14 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
 
     public override void UnityUpdate()
     {
+        /*
         if (!mbLinkedToGo)
         {
             GameObject lObj = SpawnableObjectManagerScript.instance.maSpawnableObjects[(int)SpawnableObjectEnum.PowerStorageBlock].transform.Search("HoloCube").gameObject;
-            HoloCubePreview = GameObject.Instantiate(lObj, this.mWrapper.mGameObjectList[0].gameObject.transform.position + new Vector3(0.0f, 0.75f, 0.0f), Quaternion.identity);
+            HoloCubePreview = GameObject.Instantiate(lObj, mWrapper.mGameObjectList[0].gameObject.transform.position + new Vector3(0.0f, 0.75f, 0.0f), Quaternion.identity);
             mbLinkedToGo = true;
         }
-
+        */
     }
 
     public override string GetPopupText()
@@ -139,12 +158,15 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         int segmentCount = WorldScript.instance.mSegmentUpdater.updateList.Count;
         //Header
         string retText = "Auto Lens Swapper";
-        retText += "\nPower: " + Mathf.Round(mrCurrentPower).ToString() + " / " + Mathf.Round(mrMaxPower).ToString();
+        retText += "   Power: " + Mathf.Round(mrCurrentPower).ToString() + " / " + Mathf.Round(mrMaxPower).ToString();
         retText += "\neStatus: " + mStatus.ToString();
-        retText += "\neIssue: " + mIssue.ToString();
-        if (mTargetLens != null) retText += "\nNew lens: " + mTargetLens.GetDisplayString();
+        retText += "   eIssue: " + mIssue.ToString();
+        if (mTargetLens != null)
+        {
+            retText += "\nNew lens: " + mTargetLens.GetDisplayString();
+            retText += "   Stored: " + (mnStorageMax - getStorageAvailable()).ToString() + " / " + mnStorageMax.ToString();
+        }
         else retText += "\nNew lens: null - Press T to insert & set!";
-        retText += "\nStored: " + (mnStorageMax - getStorageAvailable()).ToString() + " / " + mnStorageMax.ToString();
         retText += "\n------";
         //Body
         switch (mStatus)
@@ -154,19 +176,23 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
                 if ( mIssue != eIssues.Ready) retText += GetIssueText(mIssue);
                 else
                 {
-                    if (mbOnlySwap) retText += "\nMode: swap only (Shift + E)";
-                    else retText += "\nMode: swap & insert (Shift + E)";
+                    /*
+                    if (mbOnlySwap) retText += "\nMode: swap only (Shift + T)";
+                    else retText += "\nMode: swap & insert (Shift + T)";
                     if (mbTrashOld) retText += "\nOld lenses: destroy (Shift + Q)";
                     else retText += "\nOld lenses: output to adjacent machine (Shift + Q)";
+                    */
                     retText += "\n\nPress E to start running!";
                     retText += "\nPress Q to remove lenses and reset machine at any time.";
                     // ^^^ replace with dynamic text for "E"
 
-                    if (Input.GetButtonDown("Interact") && Input.GetKeyDown(KeyCode.LeftShift) && UIManager.AllowInteracting)
+                    /*
+                    if (Input.GetButtonDown("Store") && Input.GetKeyDown(KeyCode.LeftShift))// && UIManager.AllowInteracting)
                         mbOnlySwap = !mbOnlySwap;
-                    if (Input.GetButtonDown("Extract") && Input.GetKeyDown(KeyCode.LeftShift) && UIManager.AllowInteracting)
+                    else if (Input.GetButtonDown("Extract") && Input.GetKeyDown(KeyCode.LeftShift))// && UIManager.AllowInteracting)
                         mbTrashOld = !mbTrashOld;
-                    else if (Input.GetButtonDown("Interact") && !Input.GetKeyDown(KeyCode.LeftShift) && UIManager.AllowInteracting)
+                    */
+                    if (Input.GetButtonDown("Interact") && !Input.GetKeyDown(KeyCode.LeftShift))// && UIManager.AllowInteracting)
                         mStatus = eStatuses.Running;
                 }
                 break;
@@ -176,9 +202,9 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
                 if (mIssue != eIssues.Ready) retText += GetIssueText(mIssue);
                 else
                 {
-                    retText += "\nSegment: " + mnSegmentID.ToString() + " / " + segmentCount.ToString() + " (" + Mathf.Round((float)mnSegmentID / (float)segmentCount).ToString() + ")";
-                    retText += "LPTs checked: " + mnTrackLPTs.ToString();
-                    retText += "Lens swaps: " + mnTrackSwaps.ToString();
+                    retText += "\nSegment: " + mnSegmentID.ToString() + " / " + segmentCount.ToString() + " (" + (Mathf.Round((float)mnSegmentID / (float)segmentCount * 100f)).ToString() + "%)";
+                    retText += "\nLPTs checked: " + mnTrackLPTs.ToString();
+                    retText += "\nLens swaps: " + mnTrackSwaps.ToString();
                 }
                     retText += "\nPress Q to remove lenses and reset machine.";
                 break;
@@ -187,10 +213,10 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
                 //finished running over ID segments, swapping index? lenses
                 if (mbHaltedEarly) retText += "\nHalted early!";
                 else               retText += "\nComplete!";
-                retText += "Segments checked: " + mnSegmentID.ToString();
-                retText += "LPTs checked: " + mnTrackLPTs.ToString();
-                retText += "Lens swaps: " + mnTrackSwaps.ToString();
-                retText += "\n\nPress Q to start over!";
+                retText += "   Segments checked: " + mnSegmentID.ToString();
+                retText += "   LPTs checked: " + mnTrackLPTs.ToString();
+                retText += "   Lens swaps: " + mnTrackSwaps.ToString();
+                retText += "\nPress Q to start over!";
                 // ^^^ replace with dynamic text for "Q"
                 break;
 
@@ -208,17 +234,19 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
     private void PlayerExtractRequest()
     {
         Player player = WorldScript.mLocalPlayer;
+        int lensCount = 0;
 
         if (player == null) return;
-        if (mnStorageMax - getStorageAvailable() <= 0) return; //No lenses stored
 
-        int lensCount = mStoredLenses.GetAmount();
-
-        Debug.Log("[AutoLensCrafter] Removing " + lensCount + " lenses from machine, placing into " + player.mUserName);
-        if (!player.mInventory.AddItem(mStoredLenses))
+        if(mStoredLenses != null) lensCount = mStoredLenses.GetAmount();
+        if (lensCount > 0)
         {
-            ItemManager.instance.DropItem(mStoredLenses, player.mnWorldX, player.mnWorldY, player.mnWorldZ, Vector3.zero);
-            Debug.Log("[AutoLensCrafter] Player's inventory did not accept lenses. Dropping at player's feet.");
+            Debug.Log("[Auto Lens Swapper] Removing " + lensCount + " lenses from machine, placing into " + player.mUserName);
+            if (!player.mInventory.AddItem(mStoredLenses))
+            {
+                ItemManager.instance.DropItem(mStoredLenses, player.mnWorldX, player.mnWorldY, player.mnWorldZ, Vector3.zero);
+                Debug.Log("[Auto Lens Swapper] Player's inventory did not accept lenses. Dropping at player's feet.");
+            }
         }
         mStoredLenses = null;
         mTargetLens = null;
@@ -228,7 +256,17 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
             mbHaltedEarly = true;
             mStatus = eStatuses.Done;
         }
-        else mStatus = eStatuses.Stopped;
+        else if (mStatus == eStatuses.Done)
+        {
+            mnTrackLPTs = 0;
+            mnTrackSwaps = 0;
+            mnSegmentEIndex1 = 0;
+            mnSegmentEIndex2 = 0;
+            mnSegmentID = 0;
+            mbHaltedEarly = false;
+            mStatus = eStatuses.Stopped;
+        }
+
 
         MarkDirtyDelayed();
         RequestImmediateNetworkUpdate();
@@ -251,15 +289,15 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         if (itemToStore == null) return;
         if (!isValidLensID(itemToStore.mnItemID))
         {
-            Debug.Log("[AutoLensCrafter] Player " + player.mUserName + " tried inserting a non-lens, but was denied!");
-            Debug.Log("[AutoLensCrafter] itemID: " + itemToStore.mnItemID + " itemName: " + itemToStore.GetName());
+            Debug.Log("[Auto Lens Swapper] Player " + player.mUserName + " tried inserting a non-lens, but was denied!");
+            Debug.Log("[Auto Lens Swapper] itemID: " + itemToStore.mnItemID + " itemName: " + itemToStore.GetName());
             return;
         }
         if (mTargetLens != null)
         {
             if (itemToStore.mnItemID != mTargetLens.mnItemID && getStorageAvailable() < mnStorageMax)
             {
-                Debug.Log("[AutoLensCrafter][info] Player " + player.mUserName + " tried inserting a differing lens than what was still in the machine!");
+                Debug.Log("[Auto Lens Swapper][info] Player " + player.mUserName + " tried inserting a differing lens than what was still in the machine!");
                 return;
             }
         }
@@ -303,6 +341,7 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         if (mStoredLenses == null || mStoredLenses.mnItemID != mTargetLens.mnItemID)
         {
             mStoredLenses = ItemManager.SpawnItem(itemToStore.mnItemID);
+            AddLenses(-1);// SpawnItem starts with the amount as 1.
         }
         AddLenses(amount);
         player.mInventory.VerifySuitUpgrades(); //Shouldn't be needed, but lets be safe.
@@ -333,36 +372,54 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
 
     private bool checkReady()
     {
+        if (mUpdates % 20 == 0 && mDebug)
+        {
+            string txt = "[Auto Lens Swapper][DEBUG] checkReady called.";
+            txt += "\nmIssue: " + mIssue.ToString();
+            Debug.LogWarning(txt);
+        }
+
         if (mrCurrentPower < mrPowerPerSwap)
         {
             mIssue = eIssues.Power;
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: Power:" + mrCurrentPower + " - " + mrMaxPower);
             return false;
         }
-        else if (isValidLensID(mTargetLens.mnItemID))
+        else if (mTargetLens == null)
         {
             mIssue = eIssues.SetLens;
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: setlens, null");
+            return false;
+        }
+        else if (!isValidLensID(mTargetLens.mnItemID))
+        {
+            mIssue = eIssues.SetLens;
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: setlens invalid" + isValidLensID(mTargetLens.mnItemID));
             return false;
         }
         else if (mStoredLenses == null)
         {
             mIssue = eIssues.Input;
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: stored lenses null" + mStoredLenses.GetDisplayString());
             return false;
         }
         else if (mStoredLenses.GetAmount() <= 0)
         {
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: stored lenses 0");
             if (!TakeLensSurrounding())
             {
                 mIssue = eIssues.Input;
+                if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: Couldn't pull any lenses!");
                 return false;
             }
         }
         else if (mIssue == eIssues.Output)
         {
-            if (mLastLPT == null) Debug.Log("[Auto Lens Swapper][info] eIssue was output, but then mLastLPT was null! Assuming lpt was deleted and moving on.");
-            else
-            {
-                if (!runSwapLens(mLastLPT)) return false;
-            }
+            if (mUpdates % 20 == 0 && mDebug) Debug.LogWarning("[Auto Lens Swapper][DEBUG] checkReady Issue: Couldn't drop-off lenses!");
+            if (mLastLPT == null) Debug.LogWarning("[Auto Lens Swapper][info] eIssue was output, but then mLastLPT was null! Assuming lpt was deleted and moving on.");
+            else if (!runSwapLens(mLastLPT)) return false;
+            mIssue = eIssues.Ready;
+            RequestImmediateNetworkUpdate();
         }
         else if (mIssue != eIssues.Ready)
         {
@@ -382,55 +439,43 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         if (mStatus != eStatuses.Running) return;
         
         int sprintSegment = 0;
-        int trackChanges = 0;
+        int swapsAtSprintStart = mnTrackSwaps;
         int segmentCount = WorldScript.instance.mSegmentUpdater.updateList.Count;
 
         //Limited sprint, to prevent eating CPU time.
-        for (sprintSegment = 0; sprintSegment < 256; ++sprintSegment)
+        for (sprintSegment = 0; sprintSegment < 256 && mnSegmentID < segmentCount; ++sprintSegment)
         {
-            trackChanges += runLoopSegEntities(mnSegmentID);
+            runLoopSegEntities(mnSegmentID);
             if (mIssue != eIssues.Ready) break;
-
             ++mnSegmentID;
             //limit how many changes we can do in a LFUT-tick.
             //I suspect this will be more limiting than 256
-            if (trackChanges > 4) break; 
+            if (mnTrackSwaps - swapsAtSprintStart > 4) break;
         }
-        mnTrackSwaps += trackChanges;
 
         if (mnSegmentID >= segmentCount)
         {
-            Debug.Log("[Auto Lens Swapper][info] Completed a pass!");
+            Debug.LogWarning("[Auto Lens Swapper][info] Completed a pass!");
             mStatus = eStatuses.Done;
             mbHaltedEarly = false;
+            RequestImmediateNetworkUpdate();
             return;
         }
 
-        MarkDirtyDelayed();
+        //MarkDirtyDelayed();
         return;
     }
 
     //After finding a valid segment, this function will loop through the 2D array of entities.
     //The function will first try to resume from the stored index, incase it was previously paused by an issue.
     //In this and deeper functions, only issues cause pausing.
-    private int runLoopSegEntities(int segID)
+    private void runLoopSegEntities(int segID)
     {
         Segment segment = WorldScript.instance.mSegmentUpdater.updateList[segID];
-        int trackChanges = 0;
 
         if (segment == null || !segment.mbInitialGenerationComplete || segment.mEntities == null)
-            return trackChanges;
-
-        //First, try to resume on the current entity.
-        if (segment.mEntities[mnSegmentEIndex1] != null && segment.mEntities[mnSegmentEIndex1].Count > 0)
-            if(1 == runCheckEntity(segment.mEntities[mnSegmentEIndex1][mnSegmentEIndex2]))
-        {
-            ++trackChanges;
-            ++mnSegmentEIndex2;
-        }
-            
-        if (mIssue != eIssues.Ready) return trackChanges;
-
+            return;
+        
         //No-issues? Hunt for the next entity. Entities are stored in a 2D array.
         for (; mnSegmentEIndex1 < segment.mEntities.Length; ++mnSegmentEIndex1)
         {
@@ -438,32 +483,29 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
             {
                 for(; mnSegmentEIndex2 < segment.mEntities[mnSegmentEIndex1].Count; ++mnSegmentEIndex2)
                 {
-                    trackChanges += runCheckEntity(segment.mEntities[mnSegmentEIndex1][mnSegmentEIndex2]);
+                    runCheckEntity(segment.mEntities[mnSegmentEIndex1][mnSegmentEIndex2]);
                     if (mIssue != eIssues.Ready) break;
                 }
-                if (mIssue != eIssues.Ready) break;
+                if (mIssue != eIssues.Ready) break; //break all the way out, do not reset indecies.
                 //on succesfull loop, reset index.
                 mnSegmentEIndex2 = 0;
             }
         }
-        if (mIssue != eIssues.Ready) return trackChanges;
+        if (mIssue != eIssues.Ready) return; //break all the way out, do not reset indecies.
         //on succesfull loop, reset index.
         mnSegmentEIndex1 = 0;
-        return trackChanges;
+        return;
     }
 
     //Small function to check the type of an entity.
     //Prevents code repetition.
-    private int runCheckEntity(SegmentEntity entity)
+    private void runCheckEntity(SegmentEntity entity)
     {
         if (entity != null)
             if (entity.mType == eSegmentEntity.LaserPowerTransmitter)
-            {
                 if (checkReady()) //Check now, incase we ran out of power / lenses
-                    if (runSwapLens((LaserPowerTransmitter)entity))
-                        return 1;
-            }
-        return 0;
+                    runSwapLens((LaserPowerTransmitter)entity);
+        return;
     }
 
     //Executing the namesake of the mod.
@@ -486,22 +528,32 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
         
         if (hasLens)
         {
-            if(!CommunityUtil.GiveToSurrounding((MachineEntity)this, oldLens))
+            if (oldLens.mnItemID == mStoredLenses.mnItemID)
             {
-                Debug.Log("[Auto Lens Swapper][info] Could not find a surrounding machine to drop an old lens into!");
-                Debug.Log("[Auto Lens Swapper][info] Lens was not removed.");
-                mIssue = eIssues.Output;
-                mLastLPT = lpt;
+                ++mnTrackLPTs;
                 return false;
+            }
+            else
+            {
+                if (!CommunityUtil.GiveToSurrounding((MachineEntity)this, oldLens))
+                {
+                    Debug.LogWarning("[Auto Lens Swapper][issue] Could not find a surrounding machine to drop an old lens into! Lens was not removed.");
+                    mIssue = eIssues.Output;
+                    mLastLPT = lpt;
+                    return false;
+                }
             }
         }
 
         lpt.SwapLens(mTargetLens);
         AddLenses(-1);
+        mrCurrentPower -= mrPowerPerSwap;
         ++mnTrackLPTs;
+        ++mnTrackSwaps;
         MarkDirtyDelayed();
         return true;
     }
+
     public override bool ShouldSave() => true;
     public override void Write(BinaryWriter writer)
     {
@@ -589,7 +641,7 @@ public class ALS_MachineEntity : MachineEntity, PowerConsumerInterface, ItemCons
     }
 
     //Little helpers
-    public bool isValidLensID(int itemID) => (3004 <= itemID && itemID <= 3014);
+    public bool isValidLensID(int itemID) => (minLensID <= itemID && itemID <= maxLensID);
     private void AddLenses(int amount) => mStoredLenses.SetAmount(mStoredLenses.GetAmount() + amount);
 
     //PowerInterface Methods

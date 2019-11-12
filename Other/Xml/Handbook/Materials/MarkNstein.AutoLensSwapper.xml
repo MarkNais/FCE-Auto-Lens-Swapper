@@ -19,19 +19,24 @@
 					<Text>- Place, and provide with power. 64 power is used per swap.
 - The must be "set" to a new-lens by inserting (T) lenses into the machine manually.
 - Once set, the machine will also pull lenses for adjacent machines if it's internal buffer empties.
-- Follow HUD-pop-up text for setting the machine.
-- Settings include: SwapOnly (do not give empty LPTs a lense) and,
-- TrashOld: (Destroy old lenses)
+- Follow HUD-pop-up text for handling any issues.
+- Press "Interact" (E) to start the machine.
 - At any time, extract (Q) from the machine to reset it. retrieving any new-lenses still in the buffer.
 
-
+Notes on next page.
 </Text>
 				</Paragraph>
+			</Paragraphs>
+		</Page>
+    <Page>
+      <Title>Notes</Title>
+      <Paragraphs>
         <Paragraph>
-          <Text>Note: The machine only has an internal buffer for new-lenses. If not trashing: the machine will not remove a lense from an LPT if it cannot deposit the lense to an adjacent machine. The machine will wait to offload.
+          <Text>- The machine only has an internal buffer for new-lenses. If not trashing: the machine will not remove a lense from an LPT if it cannot deposit the lense to an adjacent machine. The machine will wait to offload.
+- The machine is rate-limited to roughly 20 swaps per second.
           </Text>
         </Paragraph>
-			</Paragraphs>
-		</Page>			
+      </Paragraphs>
+    </Page>
 	</Pages>
 </MaterialEntry>
