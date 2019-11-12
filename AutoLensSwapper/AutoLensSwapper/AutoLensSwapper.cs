@@ -12,7 +12,7 @@ public class MyMod: FortressCraftMod
         //modRegData.RegisterEntityUI("MarkNstein.AutoLensSwapper", new AutoLensMachineWindow());
         // ^^^ still need to make the window handler
 
-        Debug.Log("MarkNstein.AutoLensSwapper registered. Version 1.");
+        Debug.Log("MarkNstein.AutoLensSwapper registered. Version 2.");
 
         //UIManager.NetworkCommandFunctions.Add("MarkNstein.AutoLensSwapperInterface", new UIManager.HandleNetworkCommand(AutoLensMachineWindow.HandleNetworkCommand));
         // ^^^ Still need to make window handler, and network capabilities.
